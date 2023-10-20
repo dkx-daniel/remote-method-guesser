@@ -307,7 +307,7 @@ public class ArgumentHandler {
         else
         {
             gadget = (String) RMGOption.require(RMGOption.GADGET_NAME);
-            command = RMGOption.require(RMGOption.GADGET_CMD);
+            command = RMGOption.GADGET_CMD.getValue();
         }
 
         return PluginSystem.getPayloadObject(this.getAction(), gadget, command);

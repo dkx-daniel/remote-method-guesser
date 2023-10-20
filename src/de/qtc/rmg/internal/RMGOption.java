@@ -110,7 +110,10 @@ public enum RMGOption {
     SOCKET_FACTORY_SSL("--socket-factory-ssl", "enforce SSL connections from dynamically created socket factories", Arguments.storeTrue(), RMGOptionGroup.CONNECTION),
     SOCKET_FACTORY("--socket-factory", "dynamically create a socket factory class with the specified name", Arguments.store(), RMGOptionGroup.CONNECTION, "classname"),
 
-    SPRING_REMOTING("--spring-remoting", "enforce method calls to be dispatched via spring remoting", Arguments.storeTrue(), RMGOptionGroup.CONNECTION);
+    SPRING_REMOTING("--spring-remoting", "enforce method calls to be dispatched via spring remoting", Arguments.storeTrue(), RMGOptionGroup.CONNECTION),
+
+    FILE_GADGET("--gadget-file", "the specified gadget is actually a file containing the gadget", Arguments.storeTrue(), RMGOptionGroup.ACTION),
+    B64_GADGET("--gadget-b64", "the specified gadget is actually a b64 string containing the gadget", Arguments.storeTrue(), RMGOptionGroup.ACTION);
 
     public final String name;
     public final String description;
@@ -365,6 +368,9 @@ public enum RMGOption {
 
         } else if( option == RMGOption.DGC_METHOD ) {
             arg.choices("clean", "dirty");
+
+        } else if( option == RMGOption.GADGET_CMD || option == RMGOption.BIND_GADGET_CMD ) {
+            arg.nargs("?");
 
         } else if( intOptions.contains(option) ) {
             arg.type(Integer.class);

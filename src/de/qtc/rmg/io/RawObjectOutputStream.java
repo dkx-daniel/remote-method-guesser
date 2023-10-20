@@ -2,9 +2,11 @@ package de.qtc.rmg.io;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import de.qtc.rmg.internal.ExceptionHandler;
 
@@ -18,6 +20,7 @@ public class RawObjectOutputStream {
 
     private DataOutput bout;
     private OutputStream outStream;
+    private Method setBlockDataMode;
 
     /**
      * Wraps an ObjectOutputStream into an RawObjectOutputStream. The underlying OutputStream object is made
@@ -25,7 +28,7 @@ public class RawObjectOutputStream {
      *
      * @param out OutputStream to wrap around
      */
-    public RawObjectOutputStream(ObjectOutputStream out)
+    public RawObjectOutputStream(ObjectOutput out)
     {
         try {
             Field boutField = ObjectOutputStream.class.getDeclaredField("bout");
@@ -38,6 +41,9 @@ public class RawObjectOutputStream {
                 if(c.getCanonicalName().endsWith("BlockDataOutputStream")) {
                     outputStreamField = c.getDeclaredField("out");
                     outputStreamField.setAccessible(true);
+
+                    setBlockDataMode = c.getDeclaredMethod("setBlockDataMode", new Class<?>[] {boolean.class});
+                    setBlockDataMode.setAccessible(true);
                 }
             }
 
@@ -57,5 +63,26 @@ public class RawObjectOutputStream {
     public void writeRaw(byte content) throws IOException
     {
         outStream.write(content);
+    }
+
+    /**
+     * Write raw bytes to the underlying output stream.
+     *
+     * @param content bytes to write
+     * @throws IOException
+     */
+    public void writeRawObject(byte[] content) throws IOException
+    {
+        try
+        {
+            setBlockDataMode.invoke(bout, false);
+            outStream.write(content);
+            setBlockDataMode.invoke(bout, true);
+        }
+
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

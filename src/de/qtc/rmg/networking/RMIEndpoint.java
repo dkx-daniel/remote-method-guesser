@@ -14,6 +14,7 @@ import de.qtc.rmg.internal.ExceptionHandler;
 import de.qtc.rmg.internal.MethodArguments;
 import de.qtc.rmg.internal.MethodCandidate;
 import de.qtc.rmg.internal.Pair;
+import de.qtc.rmg.io.GadgetOutputStream;
 import de.qtc.rmg.io.MaliciousOutputStream;
 import de.qtc.rmg.io.RawObjectInputStream;
 import de.qtc.rmg.plugin.PluginSystem;
@@ -227,11 +228,14 @@ public class RMIEndpoint {
 
        try {
            ObjectOutputStream out = (ObjectOutputStream)call.getOutputStream();
+
            if(locationStream)
                out = new MaliciousOutputStream(out);
 
-           for(Pair<Object,Class> p : callArguments) {
-               marshalValue(p.right(), p.left(), out);
+           for(Pair<Object,Class> p : callArguments)
+           {
+               ObjectOutput gadgetStream = new GadgetOutputStream(out);
+               marshalValue(p.right(), p.left(), gadgetStream);
            }
 
        } catch(java.io.IOException e) {
@@ -276,7 +280,8 @@ public class RMIEndpoint {
      */
     private static void marshalValue(Class<?> type, Object value, ObjectOutput out) throws IOException
     {
-        if (type.isPrimitive()) {
+        if (type.isPrimitive())
+        {
             if (type == int.class) {
                 out.writeInt(((Integer) value).intValue());
             } else if (type == boolean.class) {
@@ -296,7 +301,10 @@ public class RMIEndpoint {
             } else {
                 throw new Error("Unrecognized primitive type: " + type);
             }
-        } else {
+        }
+
+        else
+        {
             out.writeObject(value);
         }
     }

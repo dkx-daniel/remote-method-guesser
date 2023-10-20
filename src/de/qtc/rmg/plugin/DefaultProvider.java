@@ -1,11 +1,16 @@
 package de.qtc.rmg.plugin;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMISocketFactory;
 
+import de.qtc.rmg.exceptions.InvalidGadgetException;
 import de.qtc.rmg.internal.ExceptionHandler;
 import de.qtc.rmg.internal.RMGOption;
+import de.qtc.rmg.io.GadgetWrapper;
 import de.qtc.rmg.io.Logger;
 import de.qtc.rmg.networking.DGCClientSocketFactory;
 import de.qtc.rmg.networking.LoopbackSocketFactory;
@@ -51,21 +56,26 @@ public class DefaultProvider implements IArgumentProvider, IPayloadProvider, ISo
     @Override
     public Object getPayloadObject(Operation action, String name, String args)
     {
-        switch(action) {
-
+        switch(action)
+        {
             case BIND:
             case REBIND:
             case UNBIND:
 
-                if(name.equalsIgnoreCase("jmx")) {
+                if(name.equalsIgnoreCase("jmx"))
+                {
                     String[] split = RMGUtils.splitListener(args);
                     return RegistryClient.prepareRMIServerImpl(split[0], Integer.valueOf(split[1]));
+                }
 
-                } else if(args == null) {
+                else if(args == null)
+                {
                     String[] split = RMGUtils.splitListener(name);
                     return RegistryClient.prepareRMIServerImpl(split[0], Integer.valueOf(split[1]));
+                }
 
-                } else {
+                else
+                {
                     Logger.eprintlnMixedYellow("The specified gadget", name, "is not supported for this action.");
                     RMGUtils.exit();
                 }
@@ -74,8 +84,37 @@ public class DefaultProvider implements IArgumentProvider, IPayloadProvider, ISo
 
             default:
 
-                if(args == null) {
-                    Logger.eprintlnMixedBlue("Specifying a", "gadget argument", "is required for this action.");
+                try
+                {
+                    if (RMGOption.B64_GADGET.getBool())
+                    {
+                        return new GadgetWrapper(name);
+                    }
+
+                    else if(RMGOption.FILE_GADGET.getBool())
+                    {
+                        byte[] gadget = Files.readAllBytes(Paths.get(name));
+                        return new GadgetWrapper(gadget);
+                    }
+                }
+
+                catch (InvalidGadgetException e)
+                {
+                    Logger.eprintlnMixedBlue("The specified gadget", "is invalid.");
+                    Logger.eprintlnMixedYellow("A valid gadget starts with", "0xaced0005", "as signature.");
+                    RMGUtils.exit();
+                }
+
+                catch (IOException e)
+                {
+                    Logger.eprintlnMixedBlue("Unable to read gadget file", RMGOption.FILE_GADGET.getValue());
+                    ExceptionHandler.showStackTrace(e);
+                    RMGUtils.exit();
+                }
+
+                if(args == null)
+                {
+                    Logger.eprintlnMixedBlue("Specifying a", "gadget argument", "is required for this gadget.");
                     RMGUtils.exit();
                 }
 
